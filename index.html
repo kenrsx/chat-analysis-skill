@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="id" data-bs-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>chat-analysis — Kenzie</title>
+<meta name="description" content="A standardized chat-analysis skill for agents and web chat. Two files, no install. Analyze conversations for patterns, dynamics, incentives, and decisions.">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+
+<style>
+  /* ---------- tokens ---------- */
+  :root{
+    --kenzie-bg:            #fafafb;
+    --kenzie-primary:       #dc2626;
+    --kenzie-primary-hover: #b91c1c;
+    --kenzie-primary-active:#991b1b;
+    --kenzie-heading:       #111827;
+    --kenzie-body:          #374151;
+    --kenzie-muted:         #6b7280;
+    --kenzie-placeholder:   #9ca3af;
+    --kenzie-border:        #e5e7eb;
+    --kenzie-card:          #ffffff;
+    --kenzie-shadow:        0 1px 2px rgba(0,0,0,.03);
+    --kenzie-shadow-hover:  0 8px 20px rgba(220,38,38,.12);
+  }
+
+  [data-bs-theme="light"]{
+    --bs-primary:         #dc2626;
+    --bs-primary-rgb:     220,38,38;
+    --bs-body-bg:         #fafafb;
+    --bs-body-color:      #374151;
+    --bs-body-font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
+    --bs-border-color:    #e5e7eb;
+    --bs-secondary-color: #6b7280;
+    --bs-link-color:      #dc2626;
+    --bs-link-hover-color:#b91c1c;
+    --bs-heading-color:   #111827;
+  }
+
+  /* Bootstrap 5.3 does not recolor .btn-primary from --bs-primary alone */
+  .btn-primary{
+    --bs-btn-color:#fff;
+    --bs-btn-bg:#dc2626;
+    --bs-btn-border-color:#dc2626;
+    --bs-btn-hover-color:#fff;
+    --bs-btn-hover-bg:#b91c1c;
+    --bs-btn-hover-border-color:#b91c1c;
+    --bs-btn-active-color:#fff;
+    --bs-btn-active-bg:#991b1b;
+    --bs-btn-active-border-color:#991b1b;
+    --bs-btn-disabled-color:#fff;
+    --bs-btn-disabled-bg:#dc2626;
+    --bs-btn-disabled-border-color:#dc2626;
+    --bs-btn-focus-shadow-rgb:220,38,38;
+    transition:transform .2s ease, background-color .2s ease, border-color .2s ease;
+  }
+  .btn-primary:hover{ transform:translateY(-2px); }
+  .btn-primary:active{ transform:translateY(0); }
+
+  /* ---------- page ---------- */
+  body{
+    font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
+    background-color:#fafafb;
+    background-image:
+      radial-gradient(640px 420px at 10% -8%, rgba(220,38,38,.08), rgba(220,38,38,0) 70%),
+      radial-gradient(720px 520px at 95% 4%,  rgba(244,63,94,.06), rgba(244,63,94,0) 70%);
+    background-attachment:fixed;
+    background-repeat:no-repeat;
+    color:#374151;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  h1,h2,h3,h4,h5,h6,.navbar-brand{
+    color:#111827;
+    letter-spacing:-0.02em;
+    font-weight:700;
+  }
+  .display-4{ letter-spacing:-0.03em; font-weight:800; }
+  .lead{ max-width:560px; }
+  .text-col{ max-width:560px; }
+  section[id]{ scroll-margin-top:72px; }
+
+  code{
+    color:#b91c1c;
+    background:#fef2f2;
+    padding:.1em .35em;
+    border-radius:.3rem;
+    font-size:.9em;
+  }
+
+  /* ---------- signature: navbar-blur ---------- */
+  .navbar-blur{
+    background-color:rgba(250,250,251,.8);
+    -webkit-backdrop-filter:blur(14px);
+    backdrop-filter:blur(14px);
+  }
+
+  /* ---------- signature: section-heading ---------- */
+  .section-heading{
+    border-left:4px solid #dc2626;
+    padding-left:1rem;
+  }
+  .section-heading .section-sub{
+    color:#6b7280;
+    padding-left:0;
+    margin-bottom:0;
+  }
+
+  /* ---------- signature: repo-card ---------- */
+  .repo-card{
+    background:#ffffff;
+    border:1px solid #e5e7eb;
+    border-radius:.75rem;
+    box-shadow:0 1px 2px rgba(0,0,0,.03);
+    transition:transform .25s ease, border-color .25s ease, box-shadow .25s ease;
+  }
+  .repo-card:hover{
+    transform:translateY(-3px);
+    border-color:#fca5a5;
+    box-shadow:0 8px 20px rgba(220,38,38,.12);
+  }
+  .repo-card .card-title,
+  .repo-card h3{
+    color:#b91c1c;
+    font-weight:700;
+    letter-spacing:-0.02em;
+  }
+
+  /* ---------- signature: social-btn ---------- */
+  .social-btn{
+    display:inline-flex;
+    align-items:center;
+    gap:.5rem;
+    padding:.5rem .95rem;
+    border:1px solid #e5e7eb;
+    border-radius:.6rem;
+    background:#ffffff;
+    color:#374151;
+    font-size:.9375rem;
+    font-weight:500;
+    text-decoration:none;
+    transition:transform .2s ease, border-color .2s ease, color .2s ease, box-shadow .2s ease;
+  }
+  .social-btn:hover{
+    transform:translateY(-2px);
+    border-color:#fca5a5;
+    color:#dc2626;
+    box-shadow:0 4px 14px rgba(220,38,38,.10);
+  }
+
+  /* ---------- signature: lang-dot ---------- */
+  .lang-switch{
+    display:inline-flex;
+    align-items:center;
+    gap:2px;
+    padding:2px;
+    border:1px solid #e5e7eb;
+    border-radius:.6rem;
+    background:#ffffff;
+  }
+  .lang-btn{
+    display:inline-flex;
+    align-items:center;
+    gap:.4rem;
+    border:0;
+    background:transparent;
+    color:#6b7280;
+    font-size:.8125rem;
+    font-weight:600;
+    letter-spacing:.02em;
+    padding:.3rem .6rem;
+    border-radius:.45rem;
+    transition:color .2s ease, background-color .2s ease;
+  }
+  .lang-btn:hover{ color:#111827; }
+  .lang-btn.is-active{ color:#111827; background:#fef2f2; }
+  .lang-dot{
+    width:6px; height:6px;
+    border-radius:50%;
+    background:#d1d5db;
+    transition:background-color .2s ease, box-shadow .2s ease;
+  }
+  .lang-btn.is-active .lang-dot{
+    background:#dc2626;
+    box-shadow:0 0 0 3px rgba(220,38,38,.15);
+  }
+
+  /* ---------- misc ---------- */
+  pre.tree{
+    background:#fafafb;
+    border:1px solid #e5e7eb;
+    border-radius:.6rem;
+    padding:1rem;
+    margin:0;
+    font-size:.875rem;
+    line-height:1.7;
+    color:#374151;
+    overflow-x:auto;
+  }
+  pre.tree code{ background:none; padding:0; color:inherit; }
+  .prompt-line{
+    background:#fafafb;
+    border:1px solid #e5e7eb;
+    border-radius:.6rem;
+    padding:.75rem .9rem;
+    font-size:.875rem;
+    color:#374151;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ transition:none !important; animation:none !important; }
+    .btn-primary:hover, .repo-card:hover, .social-btn:hover{ transform:none; }
+  }
+</style>
+</head>
+
+<body id="top">
+
+<!-- ================= NAVBAR ================= -->
+<nav class="navbar navbar-expand-lg sticky-top navbar-blur border-bottom">
+  <div class="container">
+    <a class="navbar-brand fw-bold me-2" href="kenrsx.github.io">Kenzie<span class="text-primary">.</span></a>
+
+    <div class="lang-switch me-2 order-lg-3" role="group" aria-label="Language / Bahasa">
+      <button type="button" class="lang-btn is-active" data-lang="id" aria-pressed="true">
+        <span class="lang-dot" aria-hidden="true"></span>ID
+      </button>
+      <button type="button" class="lang-btn" data-lang="en" aria-pressed="false">
+        <span class="lang-dot" aria-hidden="true"></span>EN
+      </button>
+    </div>
+
+    <button class="navbar-toggler border-0 order-lg-4" type="button" data-bs-toggle="collapse"
+            data-bs-target="#navMenu" aria-controls="navMenu" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse order-lg-2" id="navMenu">
+      <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-1 mb-2 mb-lg-0">
+        <li class="nav-item"><a class="nav-link" href="#what" data-i18n="nav.overview">Ringkasan</a></li>
+        <li class="nav-item"><a class="nav-link" href="#usage" data-i18n="nav.usage">Cara pakai</a></li>
+        <li class="nav-item"><a class="nav-link" href="#modes" data-i18n="nav.modes">Mode</a></li>
+        <li class="nav-item ms-lg-2 mt-2 mt-lg-0">
+          <a class="btn btn-sm btn-primary" href="skill.md" download="skill.md">
+            <i class="bi bi-download me-1"></i><span data-i18n="nav.cta">Unduh skill.md</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- ================= HERO ================= -->
+<header class="py-5">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-lg-8">
+        <div class="badge bg-primary-subtle text-primary-emphasis rounded-pill mb-3">
+          <i class="bi bi-chat-square-text me-1"></i><span data-i18n="hero.eyebrow">Skill untuk agent &amp; web chat</span>
+        </div>
+
+        <h1 class="display-4 fw-bold mb-3" data-i18n="hero.title">
+          Baca percakapannya, bukan cuma suasananya.
+        </h1>
+
+        <p class="lead text-secondary mb-4" data-i18n="hero.lead">
+          Satu file skill yang bikin agent menganalisis percakapan dengan cara yang sama setiap kali —
+          pola, dinamika, insentif, konflik, keputusan. Dua file. Tanpa install, tanpa dependensi, tanpa build.
+        </p>
+
+        <div class="d-flex flex-wrap gap-2 mb-4">
+          <a class="btn btn-primary" href="skill.md" download="skill.md">
+            <i class="bi bi-download me-1"></i><span data-i18n="hero.btn">Unduh skill.md</span>
+          </a>
+          <a class="social-btn" href="https://github.com/kenrsx/chat-analysis" target="_blank" rel="noopener">
+            <i class="bi bi-github"></i><span data-i18n="hero.github">Lihat repositori</span>
+          </a>
+        </div>
+
+        <div class="d-flex flex-wrap gap-3 small text-secondary">
+          <span class="d-inline-flex align-items-center">
+            <i class="bi bi-shield-check me-1"></i><span data-i18n="hero.badge.license">Lisensi MIT</span>
+          </span>
+          <span class="d-inline-flex align-items-center">
+            <i class="bi bi-box me-1"></i><span data-i18n="hero.badge.deps">Tanpa dependensi</span>
+          </span>
+          <span class="d-inline-flex align-items-center">
+            <i class="bi bi-files me-1"></i><span data-i18n="hero.badge.files">2 file</span>
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ================= WHAT THIS IS ================= -->
+<section id="what" class="py-5 border-top">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-lg-8">
+
+        <div class="section-heading mb-4">
+          <h2 class="fw-bold mb-2" data-i18n="sec.what.title">Ini apa</h2>
+          <p class="section-sub" data-i18n="sec.what.sub">Dua file. Cuma satu yang benar-benar bekerja.</p>
+        </div>
+
+        <div class="row g-3 align-items-start">
+          <div class="col-lg-7">
+            <p class="text-col mb-3" data-i18n="sec.what.p1">
+              <code>skill.md</code> adalah skill-nya — satu-satunya file yang dibutuhkan agent.
+              <code>README.md</code> untuk manusia: menjelaskan cara memuat skill, dan tidak dipakai saat runtime.
+            </p>
+            <p class="text-col mb-0" data-i18n="sec.what.p2">
+              Skill ini membaca percakapan berdasarkan bukti: pola komunikasi, dinamika antarpribadi, insentif,
+              konflik, pengaruh, keselarasan, dan sinyal perilaku. Mendukung konteks romantis, profesional,
+              akademik, sosial, dan organisasi — dan berhenti sebelum menghakimi siapa pun.
+            </p>
+          </div>
+
+          <div class="col-lg-5">
+            <div class="repo-card p-4">
+              <div class="d-flex align-items-center gap-2 mb-3">
+                <i class="bi bi-folder2-open text-secondary"></i>
+                <span class="small fw-semibold text-secondary">kenrsx / chat-analysis</span>
+              </div>
+
+              <pre class="tree"><code>.
+├── README.md
+└── skill.md</code></pre>
+
+              <p class="small text-secondary mb-0 mt-3" data-i18n="sec.what.repo.note">
+                <code>README.md</code> untuk manusia. <code>skill.md</code> yang dimuat ke agent.
+              </p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= USAGE / STEP BY STEP ================= -->
+<section id="usage" class="py-5 border-top">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-lg-8">
+
+        <div class="section-heading mb-4">
+          <h2 class="fw-bold mb-2" data-i18n="sec.use.title">Cara pakainya</h2>
+          <p class="section-sub" data-i18n="sec.use.sub">Pilih setup-nya, muat satu file, tempel percakapannya.</p>
+        </div>
+
+        <!-- --- agent --- -->
+        <div class="repo-card p-4 mb-3">
+          <div class="d-flex align-items-center gap-2 mb-1">
+            <i class="bi bi-terminal text-primary"></i>
+            <h3 class="card-title h6 mb-0" data-i18n="use.agent.title">Di agent</h3>
+          </div>
+          <p class="small text-secondary mb-4" data-i18n="use.agent.lead">
+            Tiga cara memuat skill — pilih yang didukung agent kamu.
+          </p>
+
+          <div class="d-flex gap-3 mb-3">
+            <span class="badge rounded-pill bg-primary-subtle text-primary-emphasis align-self-start">01</span>
+            <div>
+              <h4 class="h6 fw-bold mb-1" data-i18n="use.agent.s1t">Ambil filenya</h4>
+              <p class="small text-secondary mb-0" data-i18n="use.agent.s1d">
+                Unduh <code>skill.md</code>, atau clone repositorinya.
+              </p>
+            </div>
+          </div>
+
+          <div class="d-flex gap-3 mb-3">
+            <span class="badge rounded-pill bg-primary-subtle text-primary-emphasis align-self-start">02</span>
+            <div>
+              <h4 class="h6 fw-bold mb-1" data-i18n="use.agent.s2t">Muat</h4>
+              <p class="small text-secondary mb-0" data-i18n="use.agent.s2d">
+                Taruh di folder skills agent sebagai <code>&lt;agent-skills-dir&gt;/chat-analysis/skill.md</code>,
+                lampirkan ke sesi, atau tempel isinya ke system instructions.
+              </p>
+            </div>
+          </div>
+
+          <div class="d-flex gap-3 mb-3">
+            <span class="badge rounded-pill bg-primary-subtle text-primary-emphasis align-self-start">03</span>
+            <div>
+              <h4 class="h6 fw-bold mb-1" data-i18n="use.agent.s3t">Tempel percakapannya</h4>
+              <p class="small text-secondary mb-0" data-i18n="use.agent.s3d">
+                Beri agent chat atau kutipan yang mau dianalisis.
+              </p>
+            </div>
+          </div>
+
+          <div class="d-flex gap-3 mb-0">
+            <span class="badge rounded-pill bg-primary-subtle text-primary-emphasis align-self-start">04</span>
+            <div>
+              <h4 class="h6 fw-bold mb-1" data-i18n="use.agent.s4t">Minta modenya</h4>
+              <p class="small text-secondary mb-0" data-i18n="use.agent.s4d">
+                Minta pembacaan umum atau yang spesifik — individual, relasi, grup, strategis, timeline,
+                keputusan, atau penuh.
+              </p>
+            </div>
+          </div>
+
+          <hr class="my-3 opacity-25">
+          <p class="small text-secondary mb-0" data-i18n="use.agent.note">
+            Kalau agent kamu mengharapkan <code>SKILL.md</code> kapital, ganti nama filenya. Isinya tetap sama.
+          </p>
+        </div>
+
+        <!-- --- web chat --- -->
+        <div class="repo-card p-4">
+          <div class="d-flex align-items-center gap-2 mb-1">
+            <i class="bi bi-window text-primary"></i>
+            <h3 class="card-title h6 mb-0" data-i18n="use.web.title">Di web chat</h3>
+          </div>
+          <p class="small text-secondary mb-4" data-i18n="use.web.lead">Tanpa setup sama sekali.</p>
+
+          <div class="d-flex gap-3 mb-3">
+            <span class="badge rounded-pill bg-primary-subtle text-primary-emphasis align-self-start">01</span>
+            <div>
+              <h4 class="h6 fw-bold mb-1" data-i18n="use.web.s1t">Unduh filenya</h4>
+              <p class="small text-secondary mb-0" data-i18n="use.web.s1d">
+                Unduh <code>skill.md</code> lewat tombol di atas.
+              </p>
+            </div>
+          </div>
+
+          <div class="d-flex gap-3 mb-3">
+            <span class="badge rounded-pill bg-primary-subtle text-primary-emphasis align-self-start">02</span>
+            <div>
+              <h4 class="h6 fw-bold mb-1" data-i18n="use.web.s2t">Upload</h4>
+              <p class="small text-secondary mb-0" data-i18n="use.web.s2d">
+                Upload sebagai lampiran — atau tempel isinya kalau upload tidak tersedia.
+              </p>
+            </div>
+          </div>
+
+          <div class="d-flex gap-3 mb-3">
+            <span class="badge rounded-pill bg-primary-subtle text-primary-emphasis align-self-start">03</span>
+            <div>
+              <h4 class="h6 fw-bold mb-1" data-i18n="use.web.s3t">Tempel percakapannya</h4>
+              <p class="small text-secondary mb-0" data-i18n="use.web.s3d">
+                Tempel percakapan yang mau dianalisis.
+              </p>
+            </div>
+          </div>
+
+          <div class="d-flex gap-3 mb-0">
+            <span class="badge rounded-pill bg-primary-subtle text-primary-emphasis align-self-start">04</span>
+            <div>
+              <h4 class="h6 fw-bold mb-1" data-i18n="use.web.s4t">Tanya</h4>
+              <p class="small text-secondary mb-0" data-i18n="use.web.s4d">
+                Ajukan pertanyaanmu, umum atau spesifik.
+              </p>
+            </div>
+          </div>
+
+          <hr class="my-3 opacity-25">
+          <p class="small text-secondary mb-0" data-i18n="use.web.note">
+            Jangan upload <code>README.md</code> untuk analisis. Yang itu buat manusia yang buka repo.
+          </p>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= MODES ================= -->
+<section id="modes" class="py-5 border-top">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-lg-8">
+
+        <div class="section-heading mb-4">
+          <h2 class="fw-bold mb-2" data-i18n="sec.modes.title">Mode analisis</h2>
+          <p class="section-sub" data-i18n="sec.modes.sub">
+            Tujuh cara membaca percakapan yang sama. Minta satu, atau minta semuanya.
+          </p>
+        </div>
+
+        <div class="row g-3">
+
+          <div class="col-md-6">
+            <div class="repo-card p-3 h-100">
+              <h3 class="card-title h6 mb-1"><i class="bi bi-person me-1"></i><span data-i18n="mode.1.t">Individual</span></h3>
+              <p class="small text-secondary mb-0" data-i18n="mode.1.d">
+                Pola komunikasi satu peserta: cara membuka, ragu, berkomitmen, mengalihkan, dan menutup.
+              </p>
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <div class="repo-card p-3 h-100">
+              <h3 class="card-title h6 mb-1"><i class="bi bi-people me-1"></i><span data-i18n="mode.2.t">Relasi</span></h3>
+              <p class="small text-secondary mb-0" data-i18n="mode.2.d">
+                Dinamika antara dua orang atau lebih: timbal balik, sinyal ketertarikan, jarak, dan pergeseran.
+              </p>
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <div class="repo-card p-3 h-100">
+              <h3 class="card-title h6 mb-1"><i class="bi bi-diagram-3 me-1"></i><span data-i18n="mode.3.t">Dinamika grup</span></h3>
+              <p class="small text-secondary mb-0" data-i18n="mode.3.d">
+                Partisipasi, pengaruh, aliansi, konflik, dan koordinasi dalam thread grup.
+              </p>
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <div class="repo-card p-3 h-100">
+              <h3 class="card-title h6 mb-1"><i class="bi bi-briefcase me-1"></i><span data-i18n="mode.4.t">Strategis</span></h3>
+              <p class="small text-secondary mb-0" data-i18n="mode.4.d">
+                Insentif, posisi negosiasi, komitmen, leverage, dan apa yang sebenarnya diinginkan tiap pihak.
+              </p>
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <div class="repo-card p-3 h-100">
+              <h3 class="card-title h6 mb-1"><i class="bi bi-clock-history me-1"></i><span data-i18n="mode.5.t">Timeline</span></h3>
+              <p class="small text-secondary mb-0" data-i18n="mode.5.d">
+                Bagaimana percakapan dan relasi berubah antar kutipan dan sepanjang waktu.
+              </p>
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <div class="repo-card p-3 h-100">
+              <h3 class="card-title h6 mb-1"><i class="bi bi-check2-square me-1"></i><span data-i18n="mode.6.t">Keputusan &amp; eksekusi</span></h3>
+              <p class="small text-secondary mb-0" data-i18n="mode.6.d">
+                Apakah diskusi berubah jadi kepemilikan, tenggat, dan tindak lanjut.
+              </p>
+            </div>
+          </div>
+
+          <div class="col-12">
+            <div class="repo-card p-3">
+              <h3 class="card-title h6 mb-1"><i class="bi bi-layers me-1"></i><span data-i18n="mode.7.t">Analisis penuh</span></h3>
+              <p class="small text-secondary mb-0" data-i18n="mode.7.d">
+                Semua di atas, dalam satu laporan terstruktur.
+              </p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= PROMPTS ================= -->
+<section id="prompts" class="py-5 border-top">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-lg-8">
+
+        <div class="section-heading mb-4">
+          <h2 class="fw-bold mb-2" data-i18n="sec.prompts.title">Contoh prompt</h2>
+          <p class="section-sub" data-i18n="sec.prompts.sub">Salin satu, ganti topiknya, pertahankan bentuknya.</p>
+        </div>
+
+        <div class="d-flex flex-column gap-2">
+          <div class="prompt-line"><i class="bi bi-chat-left-text me-1 text-secondary"></i><span data-i18n="prompt.1">Analisis percakapan ini. Fokus ke timbal balik dan sinyal ketertarikan.</span></div>
+          <div class="prompt-line"><i class="bi bi-chat-left-text me-1 text-secondary"></i><span data-i18n="prompt.2">Lakukan analisis dinamika grup: partisipasi, pengaruh, aliansi, dan koordinasi.</span></div>
+          <div class="prompt-line"><i class="bi bi-chat-left-text me-1 text-secondary"></i><span data-i18n="prompt.3">Analisis chat founder startup ini untuk insentif, komitmen, dan pengambilan keputusan.</span></div>
+          <div class="prompt-line"><i class="bi bi-chat-left-text me-1 text-secondary"></i><span data-i18n="prompt.4">Bandingkan dua kutipan percakapan ini sepanjang waktu dan identifikasi perubahan keterlibatan.</span></div>
+          <div class="prompt-line"><i class="bi bi-chat-left-text me-1 text-secondary"></i><span data-i18n="prompt.5">Fokus ke apakah grup ini benar-benar mengambil keputusan dan menindaklanjutinya.</span></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= PRIVACY ================= -->
+<section id="privacy" class="py-5 border-top">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-lg-8">
+
+        <div class="section-heading mb-4">
+          <h2 class="fw-bold mb-2" data-i18n="sec.privacy.title">Sebelum menempel apa pun</h2>
+          <p class="section-sub" data-i18n="sec.privacy.sub">Percakapan orang lain itu bukan bahan latihan.</p>
+        </div>
+
+        <div class="repo-card p-4">
+          <p class="text-col mb-0" data-i18n="sec.privacy.text">
+            Percakapan itu sensitif. Pakai skill ini hanya untuk materi yang kamu berwenang analisis — bukan untuk
+            menguntit, memaksa, memanipulasi, atau mengeksploitasi siapa pun. Ini dibuat untuk interpretasi
+            berbasis bukti, bukan diagnosis psikologis atau kepastian soal isi pikiran orang.
+          </p>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FOOTER ================= -->
+<footer class="py-5 border-top">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-lg-8">
+        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3">
+          <div>
+            <div class="fw-bold mb-1">Kenzie<span class="text-primary">.</span></div>
+            <p class="small text-secondary mb-0" data-i18n="footer.note">Lisensi MIT. Pakai, ubah, sebarkan.</p>
+          </div>
+          <a class="social-btn" href="https://github.com/kenrsx/chat-analysis" target="_blank" rel="noopener">
+            <i class="bi bi-github"></i><span>kenrsx/chat-analysis</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+(function () {
+  var dict = {
+    id: {
+      "nav.overview": "Ringkasan",
+      "nav.usage": "Cara pakai",
+      "nav.modes": "Mode",
+      "nav.cta": "Unduh skill.md",
+
+      "hero.eyebrow": "Skill untuk agent &amp; web chat",
+      "hero.title": "Baca percakapannya, bukan cuma suasananya.",
+      "hero.lead": "Satu file skill yang bikin agent menganalisis percakapan dengan cara yang sama setiap kali — pola, dinamika, insentif, konflik, keputusan. Dua file. Tanpa install, tanpa dependensi, tanpa build.",
+      "hero.btn": "Unduh skill.md",
+      "hero.github": "Lihat repositori",
+      "hero.badge.license": "Lisensi MIT",
+      "hero.badge.deps": "Tanpa dependensi",
+      "hero.badge.files": "2 file",
+
+      "sec.what.title": "Ini apa",
+      "sec.what.sub": "Dua file. Cuma satu yang benar-benar bekerja.",
+      "sec.what.p1": "<code>skill.md</code> adalah skill-nya — satu-satunya file yang dibutuhkan agent. <code>README.md</code> untuk manusia: menjelaskan cara memuat skill, dan tidak dipakai saat runtime.",
+      "sec.what.p2": "Skill ini membaca percakapan berdasarkan bukti: pola komunikasi, dinamika antarpribadi, insentif, konflik, pengaruh, keselarasan, dan sinyal perilaku. Mendukung konteks romantis, profesional, akademik, sosial, dan organisasi — dan berhenti sebelum menghakimi siapa pun.",
+      "sec.what.repo.note": "<code>README.md</code> untuk manusia. <code>skill.md</code> yang dimuat ke agent.",
+
+      "sec.use.title": "Cara pakainya",
+      "sec.use.sub": "Pilih setup-nya, muat satu file, tempel percakapannya.",
+
+      "use.agent.title": "Di agent",
+      "use.agent.lead": "Tiga cara memuat skill — pilih yang didukung agent kamu.",
+      "use.agent.s1t": "Ambil filenya",
+      "use.agent.s1d": "Unduh <code>skill.md</code>, atau clone repositorinya.",
+      "use.agent.s2t": "Muat",
+      "use.agent.s2d": "Taruh di folder skills agent sebagai <code>&lt;agent-skills-dir&gt;/chat-analysis/skill.md</code>, lampirkan ke sesi, atau tempel isinya ke system instructions.",
+      "use.agent.s3t": "Tempel percakapannya",
+      "use.agent.s3d": "Beri agent chat atau kutipan yang mau dianalisis.",
+      "use.agent.s4t": "Minta modenya",
+      "use.agent.s4d": "Minta pembacaan umum atau yang spesifik — individual, relasi, grup, strategis, timeline, keputusan, atau penuh.",
+      "use.agent.note": "Kalau agent kamu mengharapkan <code>SKILL.md</code> kapital, ganti nama filenya. Isinya tetap sama.",
+
+      "use.web.title": "Di web chat",
+      "use.web.lead": "Tanpa setup sama sekali.",
+      "use.web.s1t": "Unduh filenya",
+      "use.web.s1d": "Unduh <code>skill.md</code> lewat tombol di atas.",
+      "use.web.s2t": "Upload",
+      "use.web.s2d": "Upload sebagai lampiran — atau tempel isinya kalau upload tidak tersedia.",
+      "use.web.s3t": "Tempel percakapannya",
+      "use.web.s3d": "Tempel percakapan yang mau dianalisis.",
+      "use.web.s4t": "Tanya",
+      "use.web.s4d": "Ajukan pertanyaanmu, umum atau spesifik.",
+      "use.web.note": "Jangan upload <code>README.md</code> untuk analisis. Yang itu buat manusia yang buka repo.",
+
+      "sec.modes.title": "Mode analisis",
+      "sec.modes.sub": "Tujuh cara membaca percakapan yang sama. Minta satu, atau minta semuanya.",
+
+      "mode.1.t": "Individual",
+      "mode.1.d": "Pola komunikasi satu peserta: cara membuka, ragu, berkomitmen, mengalihkan, dan menutup.",
+      "mode.2.t": "Relasi",
+      "mode.2.d": "Dinamika antara dua orang atau lebih: timbal balik, sinyal ketertarikan, jarak, dan pergeseran.",
+      "mode.3.t": "Dinamika grup",
+      "mode.3.d": "Partisipasi, pengaruh, aliansi, konflik, dan koordinasi dalam thread grup.",
+      "mode.4.t": "Strategis",
+      "mode.4.d": "Insentif, posisi negosiasi, komitmen, leverage, dan apa yang sebenarnya diinginkan tiap pihak.",
+      "mode.5.t": "Timeline",
+      "mode.5.d": "Bagaimana percakapan dan relasi berubah antar kutipan dan sepanjang waktu.",
+      "mode.6.t": "Keputusan &amp; eksekusi",
+      "mode.6.d": "Apakah diskusi berubah jadi kepemilikan, tenggat, dan tindak lanjut.",
+      "mode.7.t": "Analisis penuh",
+      "mode.7.d": "Semua di atas, dalam satu laporan terstruktur.",
+
+      "sec.prompts.title": "Contoh prompt",
+      "sec.prompts.sub": "Salin satu, ganti topiknya, pertahankan bentuknya.",
+      "prompt.1": "Analisis percakapan ini. Fokus ke timbal balik dan sinyal ketertarikan.",
+      "prompt.2": "Lakukan analisis dinamika grup: partisipasi, pengaruh, aliansi, dan koordinasi.",
+      "prompt.3": "Analisis chat founder startup ini untuk insentif, komitmen, dan pengambilan keputusan.",
+      "prompt.4": "Bandingkan dua kutipan percakapan ini sepanjang waktu dan identifikasi perubahan keterlibatan.",
+      "prompt.5": "Fokus ke apakah grup ini benar-benar mengambil keputusan dan menindaklanjutinya.",
+
+      "sec.privacy.title": "Sebelum menempel apa pun",
+      "sec.privacy.sub": "Percakapan orang lain itu bukan bahan latihan.",
+      "sec.privacy.text": "Percakapan itu sensitif. Pakai skill ini hanya untuk materi yang kamu berwenang analisis — bukan untuk menguntit, memaksa, memanipulasi, atau mengeksploitasi siapa pun. Ini dibuat untuk interpretasi berbasis bukti, bukan diagnosis psikologis atau kepastian soal isi pikiran orang.",
+
+      "footer.note": "Lisensi MIT. Pakai, ubah, sebarkan."
+    },
+
+    en: {
+      "nav.overview": "Overview",
+      "nav.usage": "How to use",
+      "nav.modes": "Modes",
+      "nav.cta": "Download skill.md",
+
+      "hero.eyebrow": "A skill for agents &amp; web chat",
+      "hero.title": "Read the conversation, not the vibe.",
+      "hero.lead": "One skill file that makes an agent analyze a conversation the same way every time — patterns, dynamics, incentives, conflicts, decisions. Two files. No install, no dependencies, no build step.",
+      "hero.btn": "Download skill.md",
+      "hero.github": "View the repository",
+      "hero.badge.license": "MIT license",
+      "hero.badge.deps": "No dependencies",
+      "hero.badge.files": "2 files",
+
+      "sec.what.title": "What this is",
+      "sec.what.sub": "Two files. Only one of them actually works.",
+      "sec.what.p1": "<code>skill.md</code> is the skill — the only file an agent needs. <code>README.md</code> is for humans: it explains how to load the skill, and it is not used at runtime.",
+      "sec.what.p2": "The skill reads conversations for evidence: communication patterns, interpersonal dynamics, incentives, conflicts, influence, alignment, and behavioural signals. It supports romantic, professional, academic, social, and organizational contexts — and it stops short of diagnosing anyone.",
+      "sec.what.repo.note": "<code>README.md</code> is for humans. <code>skill.md</code> is what you load.",
+
+      "sec.use.title": "How to use it",
+      "sec.use.sub": "Pick your setup, load one file, paste the conversation.",
+
+      "use.agent.title": "In an agent",
+      "use.agent.lead": "Three ways to load the skill — pick whichever your agent supports.",
+      "use.agent.s1t": "Get the file",
+      "use.agent.s1d": "Download <code>skill.md</code>, or clone the repository.",
+      "use.agent.s2t": "Load it",
+      "use.agent.s2d": "Drop it into your agent's skills folder as <code>&lt;agent-skills-dir&gt;/chat-analysis/skill.md</code>, attach it to the session, or paste its contents into the system instructions.",
+      "use.agent.s3t": "Paste the conversation",
+      "use.agent.s3d": "Give the agent the chat or excerpt you want analyzed.",
+      "use.agent.s4t": "Ask for a mode",
+      "use.agent.s4d": "Request a general read or a specific one — individual, relationship, group, strategic, timeline, decision, or full.",
+      "use.agent.note": "If your agent expects <code>SKILL.md</code> in caps, rename the file. The content stays the same.",
+
+      "use.web.title": "In web chat",
+      "use.web.lead": "No setup at all.",
+      "use.web.s1t": "Download the file",
+      "use.web.s1d": "Download <code>skill.md</code> with the button above.",
+      "use.web.s2t": "Upload it",
+      "use.web.s2d": "Upload it as an attachment — or paste its contents if upload is unavailable.",
+      "use.web.s3t": "Paste the conversation",
+      "use.web.s3d": "Paste the chat you want analyzed.",
+      "use.web.s4t": "Ask",
+      "use.web.s4d": "Ask your question, general or specific.",
+      "use.web.note": "Don't upload <code>README.md</code> for analysis. That one is for humans browsing the repo.",
+
+      "sec.modes.title": "Analysis modes",
+      "sec.modes.sub": "Seven ways to read the same conversation. Ask for one, or ask for all.",
+
+      "mode.1.t": "Individual",
+      "mode.1.d": "One participant's communication patterns: how they open, hedge, commit, deflect, and close.",
+      "mode.2.t": "Relationship",
+      "mode.2.d": "Dynamics between two or more people: reciprocity, interest signals, distance, and drift.",
+      "mode.3.t": "Group dynamics",
+      "mode.3.d": "Participation, influence, alliances, conflict, and coordination in a group thread.",
+      "mode.4.t": "Strategic",
+      "mode.4.d": "Incentives, negotiation positions, commitment, leverage, and what each side actually wants.",
+      "mode.5.t": "Timeline",
+      "mode.5.d": "How the conversation and the relationship change across excerpts and over time.",
+      "mode.6.t": "Decision &amp; execution",
+      "mode.6.d": "Whether the discussion turns into ownership, deadlines, and follow-through.",
+      "mode.7.t": "Full analysis",
+      "mode.7.d": "All of the above, in one structured report.",
+
+      "sec.prompts.title": "Example prompts",
+      "sec.prompts.sub": "Copy one, change the subject, keep the shape.",
+      "prompt.1": "Analyze this conversation. Focus on reciprocity and interest signals.",
+      "prompt.2": "Do a group-dynamics analysis: participation, influence, alliances, and coordination.",
+      "prompt.3": "Analyze this startup founder chat for incentives, commitment, and decision-making.",
+      "prompt.4": "Compare these two conversation excerpts over time and identify changes in engagement.",
+      "prompt.5": "Focus on whether this group actually makes decisions and follows through.",
+
+      "sec.privacy.title": "Before you paste anything",
+      "sec.privacy.sub": "Someone else's conversation is not practice material.",
+      "sec.privacy.text": "Conversations are sensitive. Use this skill only on material you're authorized to analyze — not to stalk, coerce, manipulate, or exploit anyone. It's built for evidence-based interpretation, not psychological diagnosis or certainty about private thoughts.",
+
+      "footer.note": "MIT licensed. Use it, modify it, share it."
+    }
+  };
+
+  function apply(lang) {
+    var d = dict[lang] || dict.id;
+    document.documentElement.setAttribute('lang', lang);
+
+    document.querySelectorAll('[data-i18n]').forEach(function (el) {
+      var key = el.getAttribute('data-i18n');
+      if (Object.prototype.hasOwnProperty.call(d, key)) {
+        el.innerHTML = d[key];
+      }
+    });
+
+    document.querySelectorAll('.lang-btn').forEach(function (btn) {
+      var on = btn.getAttribute('data-lang') === lang;
+      btn.classList.toggle('is-active', on);
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+
+    try { localStorage.setItem('kenzie-lang', lang); } catch (e) {}
+  }
+
+  document.querySelectorAll('.lang-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      apply(btn.getAttribute('data-lang'));
+    });
+  });
+
+  var stored = null;
+  try { stored = localStorage.getItem('kenzie-lang'); } catch (e) {}
+  apply(stored === 'en' ? 'en' : 'id');
+})();
+</script>
+
+</body>
+</html>
